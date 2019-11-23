@@ -1,0 +1,15 @@
+language: node_js
+node_js:
+  - latest
+script:
+  - rm -rf node_modules
+  - npm install
+  - npm run build
+  - echo "book.steps.info" > ./dist/CNAME
+deploy:
+  provider: pages
+  skip_cleanup: true
+  github_token: $github_token
+  local_dir: dist
+  on:
+    branch: master
