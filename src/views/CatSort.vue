@@ -13,7 +13,7 @@
         <div class="items">
             <div class="item" v-for="(item, key) in data" :key="key">
                 <div class="img">
-                    <ImageItem v-if="item.cover" :source="item.cover" :alt="item.title" />
+                    <!--                    <ImageItem v-if="item.cover" :source="item.cover" :alt="item.title" />-->
                 </div>
                 <div class="detail">
                     <div class="header">
@@ -21,20 +21,17 @@
                         <div class="desc">{{ item.shortIntro }}</div>
                     </div>
                     <div class="info">
-                        <span><md-icon name="user" size="sm" />{{ item.author }}</span
+                        <span><Icon name="user" size="sm" />{{ item.author }}</span
                         ><span>{{ item.majorCate }}</span>
                     </div>
                 </div>
             </div>
         </div>
-        <Observer @intersect="fetchData" />
     </div>
 </template>
 
 <script>
-import Observer from '../components/Observe';
-import { TabBar, Icon } from 'mand-mobile';
-import ImageItem from '../components/ImageItem';
+import { Icon } from 'vant';
 export default {
     name: 'CatSort',
     data() {
@@ -42,7 +39,10 @@ export default {
             data: [],
             horizon: {
                 current: 0,
-                items: [{ name: 0, label: '男生' }, { name: 1, label: '女生' }]
+                items: [
+                    { name: 0, label: '男生' },
+                    { name: 1, label: '女生' }
+                ]
             },
             vertical: {
                 current: 0,
@@ -136,10 +136,12 @@ export default {
         }
     },
     components: {
-        Observer,
-        [TabBar.name]: TabBar,
-        [Icon.name]: Icon,
-        ImageItem
+        Icon
+    },
+    beforeRouteLeave(to, from, next) {
+        this.bscroll && this.bscroll.destroy();
+        this.$toast.clear();
+        next();
     }
 };
 </script>

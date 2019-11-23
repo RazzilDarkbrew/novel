@@ -1,11 +1,11 @@
 <template>
     <div id="app">
         <nav class="app-nav" v-if="$route.name !== 'home'">
-            <md-icon name="arrow-left" @click="$_back" />
+            <Icon name="arrow-left" @click="$_back" />
             {{ title }}
-            <md-icon name="sort" @click="sort = !sort" v-if="$route.name === 'category'" />
-            <md-icon name="wait" @click="showCategory = !showCategory" v-else-if="$route.name === 'chapter'" />
-            <md-icon name="home" v-else @click="$router.push({ name: 'home' })" />
+            <Icon name="chart-trending-o" @click="sort = !sort" v-if="$route.name === 'category'" />
+            <Icon name="ellipsis" @click="showCategory = !showCategory" v-else-if="$route.name === 'chapter'" />
+            <Icon name="home-o" v-else @click="$router.push({ name: 'home' })" />
         </nav>
         <transition :name="transitionName" mode="out-in">
             <router-view class="app-main" :sort="sort" :showCategory="showCategory" @changeTitle="changeTitle" />
@@ -14,11 +14,11 @@
 </template>
 
 <script>
-import { Icon } from 'mand-mobile';
+import { Icon } from 'vant';
 
 export default {
     components: {
-        [Icon.name]: Icon
+        Icon
     },
     data() {
         return {
@@ -52,31 +52,24 @@ export default {
 }
 
 html,
-body,
-#app {
+body {
     position: relative;
-    font-size: 32px;
+    font-size: 13px;
     width: 100vw;
     height: 100vh;
     line-height: 1.5;
-}
-#app {
-    padding-top: 80px;
+    overflow: hidden;
 }
 .app-nav {
     display: flex;
-    position: fixed;
-    top: 0;
-    left: 0;
     padding: 0 15px;
-    width: 100vw;
-    height: 80px;
+    height: 44px;
     background-color: #2f86f6;
     color: #fff;
     justify-content: space-between;
     align-items: center;
-    font-size: 26px;
-    z-index: 9999;
+    font-size: 14px;
+    z-index: 99;
 }
 
 .app-main {

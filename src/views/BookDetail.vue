@@ -1,23 +1,13 @@
 <template>
-    <div class="book-detail">
-        <template v-if="loading"> </template>
-        <template v-else-if="error">
-            <md-result-page
-                class="customized"
-                img-url="//manhattan.didistatic.com/static/manhattan/do1_JX7bcfXqLpStKRv31xlp"
-                text="不太确定自己错在了哪里..."
-                subtext="要不然刷新试试？"
-                v-if="error"
-            />
-        </template>
-        <template v-else>
+    <div class="book-detail scroll" v-cloak>
+        <div class="content">
             <div class="info">
                 <div class="cover">
-                    <img :src="data.detail.cover" :alt="data.detail.title" />
+                    <img v-lazy="data.detail.cover" :alt="data.detail.title" />
                 </div>
                 <div class="detail">
                     <div class="header">
-                        <h3>{{ data.detail.title }}</h3>
+                        <div class="title">{{ data.detail.title }}</div>
                         <p>
                             <span>{{ data.detail.author }}</span
                             >{{ data.detail.majorCate }}
@@ -41,69 +31,63 @@
                 </div>
             </div>
             <div class="shortIntro">
-                <h3>简介</h3>
+                <div class="title">简介</div>
                 <p>{{ data.detail.longIntro }}</p>
             </div>
             <div class="categories" @click="showSelectSource = !showSelectSource">
                 <span>目录</span>
                 <span>14小时前更新</span>
                 <span>{{ data.detail.lastChapter }}</span>
-                <md-icon name="arrow-right" size="sm"></md-icon>
+                <Icon name="arrow-right" size="sm"></Icon>
             </div>
             <div class="related">
-                <h3>本书追友还在读这些书</h3>
-                <md-scroll-view ref="scrollView" :scrolling-y="false" :auto-reflow="true">
-                    <div class="items">
-                        <div class="item" v-for="(item, key) in data.recommend" :key="key" @click="goBook(item)">
-                            <div class="cover">
-                                <img :src="item.cover" :alt="item.title" />
-                            </div>
-                            <div class="name">{{ item.title }}</div>
+                <div class="title">本书追友还在读这些书</div>
+                <div class="items">
+                    <div class="item" v-for="(item, key) in data.recommend" :key="key" @click="goBook(item)">
+                        <div class="cover">
+                            <img v-lazy="item.cover" :alt="item.title" />
                         </div>
+                        <div class="name">{{ item.title }}</div>
                     </div>
-                </md-scroll-view>
+                </div>
             </div>
-            <div class="others">
-                <h3>作者的其他作品</h3>
-                <md-scroll-view ref="scrollView" :scrolling-y="false" :auto-reflow="true">
-                    <div class="items">
-                        <div class="item" v-for="(item, key) in data.other" :key="key" @click="goBook(item)">
-                            <div class="cover">
-                                <img :src="item.cover" :alt="item.title" />
-                            </div>
-                            <div class="name">{{ item.title }}</div>
+            <div class="others" v-if="data.other.length">
+                <div class="title">作者的其他作品</div>
+                <div class="items">
+                    <div class="item" v-for="(item, key) in data.other" :key="key" @click="goBook(item)">
+                        <div class="cover">
+                            <img :src="item.cover" :alt="item.title" />
                         </div>
+                        <div class="name">{{ item.title }}</div>
                     </div>
-                </md-scroll-view>
+                </div>
             </div>
-        </template>
+        </div>
 
-        <md-action-sheet v-model="showSelectSource" title="选择小说来源" :options="options" @selected="$_selected"></md-action-sheet>
+        <ActionSheet v-model="showSelectSource" title="选择小说来源" :actions="options" @select="$_selected"></ActionSheet>
     </div>
 </template>
 
 <script>
-import { ScrollView, Icon, ActionSheet, ActivityIndicator, Dialog, ResultPage } from 'mand-mobile';
-
+import { Icon, ActionSheet } from 'vant';
+import BScroll from 'better-scroll';
 export default {
     name: 'BookDetail',
     components: {
-        [ScrollView.name]: ScrollView,
-        [ActionSheet.name]: ActionSheet,
-        [ActivityIndicator.name]: ActivityIndicator,
-        [Icon.name]: Icon,
-        [Dialog.name]: Dialog,
-        [ResultPage.name]: ResultPage
+        Icon,
+        ActionSheet
     },
     data() {
         return {
             bookid: this.$route.query.bookid,
             data: {
                 detail: {
-                    rating: { score: 0 }
+                    wordCount: 0,
+                    rating: { score: 0, count: 0 },
+                    retentionRatio: 0
                 },
                 recommend: {},
-                other: {},
+                other: [],
                 source: []
             },
             loading: false,
@@ -126,13 +110,16 @@ export default {
             let options = [];
             this.data.source.map((v, k) => {
                 options.push({
-                    label: v.name,
+                    name: v.name,
                     value: k,
                     _id: v._id
                 });
             });
             return options;
         }
+    },
+    created() {
+        this.bscroll = null;
     },
     filters: {
         count(val) {
@@ -151,15 +138,27 @@ export default {
                     this.error = true;
                 }
             });
+            if (this.bscroll) {
+                this.bscroll.refresh();
+            } else {
+                this.bscroll = new BScroll('.scroll', {
+                    scrollY: true,
+                    bounceTime: 800,
+                    click: true,
+                    probeType: 3
+                });
+            }
         },
         $_selected(item) {
-            if (item.label === '优质书源') {
-                Dialog.confirm({
-                    title: '友情提示',
-                    content: '优质书源是追书神器官方Vip书源，无法阅读某些章节！',
-                    cancelText: '取消',
-                    confirmText: '确定',
-                    onConfirm: () => {
+            if (item.name === '优质书源') {
+                this.$dialog
+                    .confirm({
+                        title: '友情提示',
+                        message: '优质书源是追书神器官方Vip书源，无法阅读某些章节！',
+                        cancelText: '取消',
+                        confirmText: '确定'
+                    })
+                    .then(() => {
                         this.$db.setData('current', { sourceValue: item.value });
                         this.$router.push({
                             name: 'category',
@@ -168,29 +167,37 @@ export default {
                                 sourceId: item._id
                             }
                         });
-                    }
-                });
+                    });
             }
         },
         async goBook(obj) {
             await this.$db.setData('current', obj);
             this.bookid = obj._id;
         }
+    },
+    beforeRouteLeave(to, from, next) {
+        this.bscroll && this.bscroll.destroy();
+        this.$toast.clear();
+        next();
     }
 };
 </script>
 
 <style lang="scss" scoped>
 .book-detail {
-    padding: 15px;
-    h3 {
-        padding-top: 15px;
-        margin-bottom: 15px;
-        font-size: 30px;
-        color: #666;
+    height: calc(100vh - 44px);
+    overflow: hidden;
+    .title {
+        font-size: 18px;
+        color: #1a202c;
+    }
+    .content {
+        padding: 16px;
+        min-height: calc(100% + 1px);
     }
     .info {
         display: flex;
+        margin-bottom: 16px;
         .cover {
             flex: 1;
             img {
@@ -201,12 +208,11 @@ export default {
         }
         .detail {
             display: flex;
-            padding-left: 15px;
-            flex: 4;
+            padding-left: 16px;
+            flex: 3;
             flex-direction: column;
             justify-content: space-between;
-            font-size: 26px;
-            color: #999;
+            font-size: 13px;
             .header {
                 p {
                     span {
@@ -215,7 +221,7 @@ export default {
                             display: inline-block;
                             content: '|';
                             padding: 0 10px;
-                            color: #999;
+                            color: #718096;
                         }
                     }
                 }
@@ -223,34 +229,35 @@ export default {
         }
     }
     .sub-info {
-        padding: 15px;
+        margin-bottom: 16px;
         display: flex;
         justify-content: space-between;
-        font-size: 26px;
-        color: #999;
+        font-size: 13px;
+        color: #1a202c;
         text-align: center;
         span {
             display: block;
+            color: #718096;
             &:first-child {
                 color: red;
             }
         }
     }
     .shortIntro {
-        padding: 15px;
-        font-size: 26px;
-        color: #999;
+        margin-bottom: 16px;
+        font-size: 13px;
+        color: #718096;
     }
     .categories {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin: 0 -15px;
-        padding: 15px;
-        border-top: 15px solid #eeeeee;
-        border-bottom: 15px solid #eeeeee;
-        font-size: 26px;
-        color: #999;
+        margin: 0 -16px;
+        padding: 16px;
+        border-top: 8px solid #edf2f7;
+        border-bottom: 8px solid #edf2f7;
+        font-size: 13px;
+        color: #1a202c;
         span {
             flex: 1;
             white-space: nowrap;
@@ -263,20 +270,25 @@ export default {
         }
     }
     .related {
-        margin-bottom: 30px;
+        margin-bottom: 16px;
+        .title {
+            padding: 16px 0;
+        }
     }
     .items {
         display: flex;
         text-align: center;
+        overflow-x: scroll;
+        -webkit-overflow-scrolling: touch;
         .item {
-            margin-right: 15px;
-            width: 150px;
-            font-size: 24px;
-            color: #999;
+            margin-right: 16px;
+            width: 80px;
+            font-size: 12px;
+            color: #1a202c;
             img {
                 display: block;
-                width: 150px;
-                height: 200px;
+                width: 80px;
+                height: 100px;
                 object-fit: cover;
             }
             .name {

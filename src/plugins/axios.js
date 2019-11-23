@@ -2,7 +2,6 @@
 
 import Vue from 'vue';
 import axios from 'axios';
-import { Toast } from 'mand-mobile';
 
 let config = {
     baseURL: 'https://novel.steps.info',
@@ -12,11 +11,11 @@ let config = {
 const _axios = axios.create(config);
 _axios.interceptors.request.use(
     function(config) {
-        Toast.loading('加载中...');
+        Vue.prototype.$toast.loading();
         return config;
     },
     function(error) {
-        Toast.failed('请求失败，请重试', 2000);
+        Vue.prototype.$toast.fail({ message: '请求失败，请重试' });
         return Promise.reject(error);
     }
 );
@@ -24,11 +23,11 @@ _axios.interceptors.request.use(
 // Add a response interceptor
 _axios.interceptors.response.use(
     function(response) {
-        Toast.hide();
+        Vue.prototype.$toast.clear();
         return response;
     },
     function(error) {
-        Toast.failed('请求失败，请重试', 2000);
+        Vue.prototype.$toast.fail({ message: '请求失败，请重试' });
         return Promise.reject(error);
     }
 );

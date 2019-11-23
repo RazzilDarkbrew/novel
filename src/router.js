@@ -45,6 +45,14 @@ const router = new Router({
             meta: {
                 title: '章节详情'
             }
+        },
+        {
+            path: '/search',
+            name: 'search',
+            components: () => import(/* webpackChunkName: "Search" */ './views/Search.vue'),
+            meta: {
+                title: '搜索'
+            }
         }
     ],
     scrollBehavior() {

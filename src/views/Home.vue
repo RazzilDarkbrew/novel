@@ -1,76 +1,58 @@
 <template>
     <div class="index">
-        <md-result-page
-            class="customized"
-            img-url="//manhattan.didistatic.com/static/manhattan/do1_JX7bcfXqLpStKRv31xlp"
-            text="不太确定自己错在了哪里..."
-            subtext="要不然刷新试试？"
-            v-if="error"
-        />
-        <template v-else>
-            <md-tabs v-model="currentTab">
-                <md-tab-pane class="content" name="jx" label="精选">
-                    <Banner :data="data.banners" />
-                    <Item :data="data.nodes" />
-                </md-tab-pane>
-                <md-tab-pane class="content" name="male" label="男生">
-                    <Banner :data="data.banners" />
-                    <Item :data="data.nodes" />
-                </md-tab-pane>
-                <md-tab-pane class="content" name="female" label="女生">
-                    <Banner :data="data.banners" />
-                    <Item :data="data.nodes" />
-                </md-tab-pane>
-                <md-tab-pane class="content" name="free" label="免费">
-                    <Banner :data="data.banners" />
-                    <Item :data="data.nodes" />
-                </md-tab-pane>
-                <md-tab-pane class="content search-content" name="search" label="搜索">
-                    <md-input-item
-                        ref="name"
-                        placeholder="作者/名称"
-                        clearable
-                        align="center"
-                        @focus="suggestList = []"
-                        @blur="suggestList = []"
-                        v-model="txt"
-                    ></md-input-item>
-                    <div :class="{ show: suggestList.length }" class="suggestList">
-                        <div v-for="(item, key) in suggestList" :key="key" class="item" @click="$_detail(item)">
-                            <span>{{ item.text || item.title }}</span
-                            ><span>{{ item.author }}</span>
+        <div class="tab">
+            <span :class="{ active: currentTab === 'jx' }" @click.stop="currentTab = 'jx'">精选</span>
+            <span :class="{ active: currentTab === 'male' }" @click.stop="currentTab = 'male'">男生</span>
+            <span :class="{ active: currentTab === 'female' }" @click.stop="currentTab = 'female'">女生</span>
+            <span :class="{ active: currentTab === 'free' }" @click.stop="currentTab = 'free'">免费</span>
+            <span :class="{ active: currentTab === 'search' }" @click.stop="currentTab = 'search'">搜索</span>
+        </div>
+        <Swipe :height="140" class="banner">
+            <SwipeItem v-for="(item, key) in data.banners" :key="key" @click="$_detail($event, item)">
+                <img :alt="item.title" v-lazy="item.img" />
+            </SwipeItem>
+        </Swipe>
+        <div class="scroll">
+            <div class="content">
+                <router-link
+                    tag="div"
+                    class="item"
+                    v-for="(item, key) in data.nodes"
+                    :key="key"
+                    :to="{ path: 'book-detail', query: { bookid: item._id || item.id } }"
+                >
+                    <div class="cover">
+                        <img :alt="item.title" v-lazy="item.cover" />
+                    </div>
+                    <div class="info">
+                        <header>
+                            <h3>{{ item.title }}</h3>
+                            <div class="desc">{{ item.shortIntro }}</div>
+                        </header>
+                        <div class="detail">
+                            <div class="author"><Icon name="user-o" />{{ item.author }}</div>
+                            <div class="tags">
+                                <span class="tag">{{ item.majorCate }}</span>
+                                <span class="follow">{{ item.latelyFollower | count }}</span>
+                            </div>
                         </div>
                     </div>
-                    <div class="hotWords">
-                        <h5>热门标签</h5>
-                        <div class="tags">
-                            <span v-for="(item, key) in hotWords" :key="key" font-color="#FF8843" type="ghost" @click="searchBook(item)">{{ item }} </span>
-                        </div>
-                    </div>
-                </md-tab-pane>
-            </md-tabs>
-        </template>
+                </router-link>
+            </div>
+        </div>
     </div>
 </template>
 
 <script>
-import { ResultPage, ScrollView, Swiper, SwiperItem, TabPane, Tabs, InputItem } from 'mand-mobile';
-import Banner from '../components/Banner';
-import Item from '../components/Item';
-import { debounce } from '../utils';
+import { Swipe, SwipeItem, Icon } from 'vant';
+import BScroll from 'better-scroll';
 
 export default {
     name: 'home',
     components: {
-        [Swiper.name]: Swiper,
-        [SwiperItem.name]: SwiperItem,
-        [ResultPage.name]: ResultPage,
-        [ScrollView.name]: ScrollView,
-        [InputItem.name]: InputItem,
-        [Tabs.name]: Tabs,
-        [TabPane.name]: TabPane,
-        Banner,
-        Item
+        Swipe,
+        SwipeItem,
+        Icon
     },
     data() {
         return {
@@ -83,55 +65,40 @@ export default {
         };
     },
     created() {
-        document.addEventListener(
-            'click',
-            () => {
-                this.suggestList = [];
-            },
-            false
-        );
+        this.bscroll = null;
     },
     watch: {
         currentTab: {
-            handler(val) {
-                this.fetchData(val);
-            },
+            handler: 'fetchData',
             immediate: true
-        },
-        txt: {
-            handler: debounce(function(val) {
-                this.$axios({
-                    method: 'GET',
-                    url: `/suggest?text=${val}`
-                }).then(res => {
-                    console.log(res.data.data);
-                    if (res.data.result === 1) {
-                        this.suggestList = res.data.data.keywords.filter(item => item.tag === 'bookname');
-                    }
-                });
-            }, 500)
+        }
+    },
+    filters: {
+        count(val) {
+            return val && val.toString().length >= 5 ? (val / 10000).toFixed(1) + '万人气' : val + '人气';
         }
     },
     methods: {
-        async fetchData(tab) {
-            if (tab === 'search') {
-                try {
-                    await this.$axios({
-                        method: 'GET',
-                        url: '/hotWords'
-                    }).then(res => {
-                        if (res.data.result === 1) {
-                            this.hotWords = res.data.data;
-                        }
-                    });
-                } catch (e) {
-                    this.error = true;
-                }
+        async fetchData() {
+            if (this.currentTab === 'search') {
+                await this.$router.push({ path: 'search' });
+                // try {
+                //     await this.$axios({
+                //         method: 'GET',
+                //         url: '/hotWords'
+                //     }).then(res => {
+                //         if (res.data.result === 1) {
+                //             this.hotWords = res.data.data;
+                //         }
+                //     });
+                // } catch (e) {
+                //     this.error = true;
+                // }
             } else {
                 try {
                     await this.$axios({
                         method: 'GET',
-                        url: `/?type=${tab}`
+                        url: `/?type=${this.currentTab}`
                     }).then(res => {
                         if (res.data.ok) {
                             const { nodes, spread } = res.data.data;
@@ -149,12 +116,23 @@ export default {
                         }
                     });
                 } catch (e) {
+                    console.log(e);
                     this.error = true;
                 }
             }
+
+            this.$nextTick(() => {
+                if (!this.bscroll) {
+                    this.bscroll = new BScroll('.scroll', {
+                        probeType: 3,
+                        click: true
+                    });
+                } else {
+                    this.bscroll.refresh();
+                }
+            });
         },
         searchBook(text) {
-            console.log(text);
             this.$axios({
                 url: `/search?text=${text}`
             }).then(res => {
@@ -165,155 +143,111 @@ export default {
                 }
             });
         },
-        async $_detail(obj) {
-            await this.$db.setData('current', obj);
-            this.$router.push({ name: 'BookDetail', query: { bookid: obj._id || obj.id } });
+        $_detail(event, obj) {
+            console.log(event, obj);
+            this.$router.push({ path: 'book-detail', query: { bookid: obj._id || obj.link || obj.id } });
         }
+    },
+    beforeRouteLeave(to, from, next) {
+        this.bscroll && this.bscroll.destroy();
+        this.$toast.clear();
+        next();
     }
 };
 </script>
 
 <style lang="scss">
-.md-field-item {
-    z-index: 99;
-}
-
 .index {
-    margin-top: -80px;
-    height: 100vh;
-
-    .title {
-        padding: 15px;
-        font-size: 32px;
-        border-bottom: 2px solid #dcdcdc;
+    font-size: 14px;
+    color: #1a202c;
+    .tab {
+        position: relative;
+        display: flex;
+        height: 44px;
+        align-items: center;
+        padding: 0 16px;
+        justify-content: space-between;
+        span {
+            position: relative;
+            display: block;
+            &::after {
+                display: block;
+                position: absolute;
+                content: '';
+                width: 100%;
+                height: 2px;
+                transform: scale(0);
+                background-color: #38b2ac;
+                transition: transform 0.167s ease-in-out;
+                left: 0;
+                bottom: -2px;
+            }
+            &.active {
+                &::after {
+                    transform: scale(1);
+                    transition: transform 0.167s ease-in-out;
+                }
+            }
+        }
     }
 
-    .swiper {
-        height: 250px;
-
+    .banner {
         img {
-            display: block;
-            width: 100%;
-            height: auto;
+            width: 100vw;
+            height: 140px;
             object-fit: cover;
         }
     }
 
-    .home-nav {
+    .scroll {
+        position: relative;
+        height: calc(100vh - 184px);
+        overflow: hidden;
+        .content {
+            padding: 16px;
+            min-height: calc(100% + 1px);
+        }
+    }
+    .item {
         display: flex;
-        justify-content: space-around;
-        font-size: 24px;
-        padding: 30px;
-        text-align: center;
-        border-bottom: 2px solid gainsboro;
-
-        a {
-            text-decoration: none;
-            color: #333;
-        }
-
-        .icon {
-            display: block;
-            margin-bottom: 10px;
-            width: 60px;
-            height: 60px;
-
-            &.icon-cat {
-                background: url('../assets/svg/icon-cat.svg') no-repeat scroll center;
-                background-size: 60px;
-                fill: #fff;
-            }
-
-            &.icon-complete {
-                background: url('../assets/svg/icon-complete.svg') no-repeat scroll center;
-                background-size: 60px;
-                fill: #fff;
-            }
-
-            &.icon-free {
-                background: url('../assets/svg/icon-free.svg') no-repeat scroll center;
-                background-size: 60px;
-            }
-
-            &.icon-serial {
-                background: url('../assets/svg/icon-serial.svg') no-repeat scroll center;
-                background-size: 60px;
-            }
-
-            &.icon-sort {
-                background: url('../assets/svg/icon-sort.svg') no-repeat scroll center;
-                background-size: 60px;
+        margin-bottom: 16px;
+        .cover {
+            flex: 1;
+            img {
+                display: block;
+                width: 100%;
+                height: auto;
+                object-fit: cover;
             }
         }
-    }
 
-    .search-content {
-        padding: 30px;
-        height: calc(100vh - 100px);
-    }
-
-    .suggestList {
-        position: absolute;
-        top: 130px;
-        left: 0;
-        padding: 0 30px;
-        width: 100%;
-        max-height: 500px;
-        overflow-y: scroll;
-        -webkit-overflow-scrolling: touch;
-        background-color: #fff;
-        transform: translateX(-100%);
-        transition: all 0.25s ease-in-out;
-        opacity: 0;
-        z-index: 1;
-        box-shadow: 0 5px 10px rgba(0, 0, 0, 0.15);
-
-        &.show {
-            transform: none;
-            opacity: 1;
-            transition: all 0.25s ease-in;
-        }
-
-        .item {
+        .info {
             display: flex;
-            height: 88px;
+            flex-direction: column;
             justify-content: space-between;
-            align-items: center;
-            font-size: 24px;
-
-            span {
-                &:last-child {
-                    color: rgb(255, 136, 67);
+            flex: 3;
+            padding-left: 16px;
+            .desc {
+                overflow: hidden;
+                display: -webkit-box;
+                -webkit-line-clamp: 3;
+                -webkit-box-orient: vertical;
+                color: #718096;
+            }
+            .detail {
+                display: flex;
+                justify-content: space-between;
+                color: #718096;
+                .tag,
+                .follow {
+                    margin-left: 8px;
+                    padding: 3px 5px;
+                    border-radius: 10px;
+                    background-color: #38b2ac;
+                    font-size: 11px;
+                    color: #ffffff;
                 }
             }
-
-            &:not(:last-child) {
-                border-bottom: 1px solid #dcdcdc;
-            }
-        }
-    }
-
-    .hotWords {
-        padding: 30px 0;
-        font-size: 26px;
-
-        h5 {
-            font-size: 30px;
-            color: gray;
-        }
-
-        .tags {
-            display: flex;
-            flex-wrap: wrap;
-        }
-
-        span {
-            display: block;
-            padding: 0 12px;
-            margin: 15px 15px 0 0;
-            border: 1px solid currentColor;
-            background: transparent;
-            color: rgb(255, 136, 67);
         }
     }
 }
