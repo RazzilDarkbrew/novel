@@ -1,15 +1,40 @@
+# 使用语言
 language: node_js
+
+# 使用nodejs版本
 node_js:
   - 12.13.1
-script:
-  - rm -rf node_modules
+
+# 仓库分支
+branches:
+  only:
+    - master
+
+# 执行install前需要执行的命令
+before_install:
+  - openssl aes-256-cbc -K $encrypted_260223a034ab_key -iv $encrypted_260223a034ab_iv
+    -in id_rsa.enc -out id_rsa -d
+
+#改变文件的权限
+  - chmod 600 ~/.ssh/id_rsa
+
+# 配置 ssh
+  - eval $(ssh-agent)
+  - ssh-add ~/.ssh/id_rsa
+  - cp .travis/ssh_config ~/.ssh/config
+  
+# 配置git的个人信息
+  - git config --global user.name "funnypan"
+  - git config --global user.email "gemini0525@foxmail.com"
+
+# 执行install
   - npm install
   - npm run build
-  - echo "book.steps.info" > ./dist/CNAME
-deploy:
+  - echo "books.steps.info" > ./dist/CNAME
+
+# 部署:
   provider: pages
   skip_cleanup: true
-  github_token: $github_token
+  github_token: "$github_token"
   local_dir: dist
-  on:
-    branch: master
+
