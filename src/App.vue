@@ -1,7 +1,7 @@
 <template>
     <div id="app">
         <nav class="app-nav" v-if="$route.name !== 'home'">
-            <Icon name="arrow-left" @click="$_back" />
+            <Icon name="arrow-left" @click="$router.back()" />
             {{ title }}
             <Icon name="chart-trending-o" @click="sort = !sort" v-if="$route.name === 'category'" />
             <Icon name="ellipsis" @click="showCategory = !showCategory" v-else-if="$route.name === 'chapter'" />
@@ -35,9 +35,6 @@ export default {
         next();
     },
     methods: {
-        $_back() {
-            this.$router.back();
-        },
         changeTitle(title) {
             this.title = title || '书城';
         }
