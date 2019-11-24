@@ -1,5 +1,0 @@
-Host github.com
-  User funnypan
-  StrictHostKeyChecking no
-  IdentityFile ~/.ssh/id_rsa
-  IdentitiesOnly yes
