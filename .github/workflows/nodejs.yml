@@ -11,7 +11,7 @@ jobs:
                 node-version: [12.x]
 
         steps:
-            - uses: actions/checkout@v1
+            - uses: actions/checkout@master
             - name: Use Node.js ${{ matrix.node-version }}
               uses: actions/setup-node@v1
               with:
@@ -28,8 +28,7 @@ jobs:
                   git config --global user.name "funnypan"
             - name: Deploy to GitHub Pages
               uses: peaceiris/actions-gh-pages@v2.5.0
-              with:
-                  ACCESS_TOKEN: ${{ secrets.ACTIONS_DEPLOY_KEY }}
-                  BASE_BRANCH: master # The branch the action should deploy from.
-                  BRANCH: gh-pages # The branch the action should deploy to.
-                  FOLDER: dist # The folder the action should deploy.
+              env:
+                  ACTIONS_DEPLOY_KEY: ${{ secrets.ACTIONS_DEPLOY_KEY }}
+                  PUBLISH_BRANCH: gh-pages
+                  PUBLISH_DIR: ./dist
