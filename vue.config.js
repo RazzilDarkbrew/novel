@@ -3,7 +3,6 @@ const CompressionPlugin = require('compression-webpack-plugin');
 const purgecss = require('@fullhuman/postcss-purgecss');
 
 module.exports = {
-    outputDir: 'docs',
     productionSourceMap: false,
     runtimeCompiler: true,
     publicPath: './',

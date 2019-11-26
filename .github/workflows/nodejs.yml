@@ -11,14 +11,22 @@ jobs:
                 node-version: [12.x]
 
         steps:
-            - uses: actions/checkout@v1
+            - name:Checkout
+                uses: actions/checkout@v1
             - name: Use Node.js ${{ matrix.node-version }}
-              uses: actions/setup-node@v1
-              with:
-                  node-version: ${{ matrix.node-version }}
+                uses: actions/setup-node@v1
+                with:
+                    node-version: ${{ matrix.node-version }}
             - name: npm install, build
-              run: |
+                run: |
                   npm ci
-                  npm run build
-              env:
-                  CI: true
+                  npm run build --if-present
+            -   name: Deploy to GitHub Pages
+                uses: JamesIves/github-pages-deploy-action@3.0.3
+                with:
+                    ACCESS_TOKEN:${{secrets.ACCESS_TOKEN}}
+                    BASE_BRANCH:master
+                    BRANCH:gh-pages
+                    FOLDER:dist
+            env:
+                CI: true
