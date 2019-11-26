@@ -24,6 +24,9 @@ jobs:
                   CI: true
             - name: Deploy to GitHub Pages
               uses: JamesIves/github-pages-deploy-action@3.0.3
+              run: |
+                  git config --global user.email "gemini0525@foxmail.com"
+                  git config --global user.name "funnypan"
               with:
                   ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
                   BASE_BRANCH: master # The branch the action should deploy from.
