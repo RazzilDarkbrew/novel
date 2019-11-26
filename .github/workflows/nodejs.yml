@@ -27,9 +27,9 @@ jobs:
                   git config --global user.email "gemini0525@foxmail.com"
                   git config --global user.name "funnypan"
             - name: Deploy to GitHub Pages
-              uses: JamesIves/github-pages-deploy-action@3.0.3
+              uses: peaceiris/actions-gh-pages@v2.5.0
               with:
-                  ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+                  ACCESS_TOKEN: ${{ secrets.ACTIONS_DEPLOY_KEY }}
                   BASE_BRANCH: master # The branch the action should deploy from.
                   BRANCH: gh-pages # The branch the action should deploy to.
                   FOLDER: dist # The folder the action should deploy.
