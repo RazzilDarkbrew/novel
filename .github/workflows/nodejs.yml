@@ -1,32 +1,38 @@
-name: Node CI
+name: github pages
 
-on: [push]
+on:
+    push:
+        branches:
+            - master
 
 jobs:
-    build:
-        runs-on: ubuntu-latest
-
-        strategy:
-            matrix:
-                node-version: [12.x]
-
+    build-deploy:
+        runs-on: ubuntu-18.04
         steps:
-            - name: Checkout
-              uses: actions/checkout@v1
-            - name: Use Node.js ${{ matrix.node-version }}
+            - uses: actions/checkout@master
+
+            - name: Setup Node
               uses: actions/setup-node@v1
               with:
-                  node-version: ${{ matrix.node-version }}
-            - name: npm install, build
-              run: |
-                  npm ci
-                  npm run build --if-present
-            - name: Deploy to GitHub Pages
-              uses: JamesIves/github-pages-deploy-action@releases/v3
+                  node-version: '10.x'
+
+            - name: Cache dependencies
+              uses: actions/cache@v1
               with:
-                  ACCESS_TOKEN: ${{secrets.ACCESS_TOKEN}}
-                  BASE_BRANCH: master
-                  BRANCH: gh-pages
-                  FOLDER: .
-        env:
-            CI: true
+                  path: ~/.npm
+                  key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+                  restore-keys: |
+                      ${{ runner.os }}-node-
+
+            - run: npm ci
+
+            #- run: npm test
+
+            - run: npm run build
+
+            - name: deploy
+              uses: peaceiris/actions-gh-pages@v2.5.0
+              env:
+                  ACTIONS_DEPLOY_KEY: ${{ secrets.ACCESS_TOKEN }}
+                  PUBLISH_BRANCH: gh-pages
+                  PUBLISH_DIR: ./dist
